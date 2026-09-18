@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 **/configs/server.yaml
+**/configs/local.yaml
 
 # Runtime outputs and generated artifacts
 var/
