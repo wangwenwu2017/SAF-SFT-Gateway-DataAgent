@@ -1,0 +1,19 @@
+# Docker 构建上下文只包含安装正式 CLI 所需的源码与元数据。
+.env
+.env.*
+!.env.example
+.git
+.github
+.venv
+.harbor-venv
+var
+dist
+tests
+scripts
+configs
+docs
+examples
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache

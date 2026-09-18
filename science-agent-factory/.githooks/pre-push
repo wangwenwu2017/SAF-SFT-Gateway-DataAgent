@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# 模块用途：在任意 Git 推送前执行 Science Agent Factory 的完整质量门禁。
+# 主要接口：Git ``pre-push`` Hook；由 ``core.hooksPath=.githooks`` 启用。
+# 输入：Git 提供的远端参数与标准输入引用列表、当前工作区源码和 uv.lock；可用 ``SAF_UV_BIN`` 指定 uv，
+# 否则依次查找 PATH 与当前账号的 ``.local/bin/uv``。
+# 输出：透传模块文档检查、Ruff 和 pytest 的输出与退出码；全部通过时允许推送。
+# 副作用与边界：只运行测试和静态检查，可能写入已忽略缓存；不修改源码、不提交、不推送、不调用模型。
+
+set -euo pipefail
+
+project_root="$(git rev-parse --show-toplevel)"
+cd -- "${project_root}"
+
+uv_bin="${SAF_UV_BIN:-$(command -v uv || true)}"
+if [[ -z "${uv_bin}" && -n "${HOME:-}" && -x "${HOME}/.local/bin/uv" ]]; then
+    uv_bin="${HOME}/.local/bin/uv"
+fi
+if [[ -z "${uv_bin}" || ! -x "${uv_bin}" ]]; then
+    echo "pre-push requires uv; set SAF_UV_BIN or install uv in PATH/.local/bin" >&2
+    exit 2
+fi
+
+"${uv_bin}" run pytest -q tests/test_module_documentation.py
+"${uv_bin}" run ruff check src tests scripts
+"${uv_bin}" run pytest -q

@@ -1,0 +1,12 @@
+{
+  "id": "example-scientific-cli",
+  "instruction": "Read input/measurements.csv and write output/summary.json containing count, mean, minimum, and maximum for the value column.",
+  "inputs": ["input/measurements.csv"],
+  "outputs": ["output/summary.json"],
+  "environment": {
+    "type": "local",
+    "os": "linux",
+    "tools": ["python3"],
+    "instructions": "See environment/README.md."
+  }
+}

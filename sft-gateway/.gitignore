@@ -1,0 +1,35 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+build/
+dist/
+
+# Local credentials and environment configuration. Keep a checked-in template
+# (for example, .env.example) if one is needed for onboarding.
+.env
+.env.*
+!.env.example
+
+# Captures, SQLite WAL/SHM sidecars, logs, and generated exports can contain
+# prompts, model responses, and tool output. They must never be committed.
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+artifacts/
+data/harbor/
+*.log
+
+# Local export/check coverage output.
+dataset/
+.coverage
+coverage.xml
+htmlcov/
+
+# Generated Harbor config contains gateway credentials.
+data/harbor-*.config.json
+.export-*/

@@ -1,0 +1,9 @@
+# Harbor 原生 JobConfig。更换 harness 只修改此文件。
+agents:
+  - name: codex
+    model_name: your-model
+    env:
+      OPENAI_BASE_URL: ${SAF_HARBOR_BASE_URL}
+      OPENAI_API_KEY: ${SAF_HARBOR_API_KEY}
+verifier:
+  disable: false

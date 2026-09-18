@@ -1,0 +1,64 @@
+storage_root: ./var/runs
+allow_host_full_access: false
+codex:
+  auth_mode: api_key
+  account_home: ~/.codex
+  network_proxy: ${SAF_CODEX_NETWORK_PROXY:-}
+  base_url: ${SAF_CODEX_BASE_URL:-}
+  api_key_env: SAF_CODEX_API_KEY
+  turn_timeout_s: 3600
+  turn_retries: 2
+  retry_backoff_s: 60
+  delivery_repair_attempts: 1
+harbor:
+  executable: harbor
+  config_file: null
+  wall_timeout_s: 86400
+  shutdown_grace_s: 30
+pipeline:
+  workflow_mode: audited
+  task_count: 1
+  concurrency: 1
+  required_trajectories: 1
+  max_builder_revisions: 1
+  max_contract_repairs: 1
+  max_distiller_revisions: 1
+  max_solver_attempts: 2
+  builder_mode: environment_aware
+  environment_strategy: synthesize
+  exploration_trials: 0
+  difficulty_policy: preserve
+  solution_guidance_mode: strategy
+batch:
+  tasks_per_seed: 1
+  generation_concurrency: 2
+  trajectory_concurrency: 2
+  max_generation_resumes: 1
+agents:
+  builder:
+    prompt_file: builder.md
+    phase_prompt_files:
+      harbor_build: builder_harbor_build.md
+    model: ${SAF_AGENT_MODEL:-bailian/deepseek-v4.1-flash}
+    reasoning_effort: medium
+  distiller:
+    prompt_file: distiller.md
+    model: ${SAF_AGENT_MODEL:-bailian/deepseek-v4.1-flash}
+    reasoning_effort: medium
+  auditor:
+    prompt_file: auditor/common.md
+    phase_prompt_files:
+      build_diagnosis: auditor/build_diagnosis.md
+      preflight: auditor/preflight.md
+      trajectory: auditor/trajectory.md
+    model: ${SAF_AGENT_MODEL:-bailian/deepseek-v4.1-flash}
+    reasoning_effort: medium
+seed_environment_cache:
+  mode: disabled
+  root: var/seed-environment-cache
+  docker_executable: docker
+  build_docker_host: null
+  rollout_docker_host: null
+  image_prefix: saf-seed-environment
+  build_concurrency: 2
+  build_timeout_s: 14400

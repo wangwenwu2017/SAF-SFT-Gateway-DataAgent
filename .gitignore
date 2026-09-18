@@ -1,0 +1,42 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+**/configs/server.yaml
+
+# Runtime outputs and generated artifacts
+var/
+**/var/
+dist/
+**/dist/
+release-manifest.json
+artifacts/
+**/artifacts/
+data/harbor/
+
+# Databases, captures and logs
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.log
+
+# Python / virtualenv / caches
+.venv/
+**/.venv/
+.harbor-venv/
+**/.harbor-venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+**/.pytest_cache/
+.ruff_cache/
+**/.ruff_cache/
+*.egg-info/
+build/
+htmlcov/
+.coverage
+coverage.xml

@@ -1,0 +1,10 @@
+# SDK 内部角色与 Harbor rollout 各自配置认证。
+storage_root: ../var/runs-v3
+allow_host_full_access: false
+harbor:
+  config_file: harbor.example.yaml
+pipeline:
+  workflow_mode: audited
+seed_environment_cache:
+  mode: disabled
+  root: ../var/seed-environment-cache

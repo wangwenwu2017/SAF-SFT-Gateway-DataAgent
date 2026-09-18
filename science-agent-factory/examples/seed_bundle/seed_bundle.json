@@ -1,0 +1,17 @@
+{
+  "schema_version": "saf.seed.v2",
+  "seed_id": "example-scientific-cli",
+  "task_card": "task_card.json",
+  "successful_trajectory": null,
+  "solution_path": "solution",
+  "environment_dir": "environment",
+  "input_dir": "input",
+  "software_dir": "software",
+  "provenance": {
+    "source": "repository-example",
+    "source_version": "1",
+    "source_task_id": "example-scientific-cli",
+    "license": "Apache-2.0"
+  },
+  "notes": "Minimal saf.seed.v2 example with a private reference solution; no fabricated trajectory."
+}

@@ -1,0 +1,13 @@
+storage_root: ../var/runs-v3
+allow_host_full_access: false
+harbor:
+  executable: harbor
+  config_file: harbor.example.yaml
+seed_environment_cache:
+  mode: require
+  root: ../var/seed-environment-cache
+  build_docker_host: null
+  rollout_docker_host: null
+pipeline:
+  workflow_mode: audited
+  environment_strategy: reuse_seed

@@ -1,0 +1,22 @@
+{
+  "retained_artifacts": [
+    "harbor-aquifer-codex1534-glm53-full-20260911",
+    "harbor-hysteretic-aquifer-control-20260911"
+  ],
+  "removed_intermediate_artifacts": [
+    "artifacts/codex-tools",
+    "artifacts/harbor-aquifer-codex1534-dryrun-20260911",
+    "artifacts/harbor-aquifer-codex1534-full-20260911",
+    "artifacts/harbor-aquifer-codex1534-full-20260911-r2",
+    "artifacts/harbor-aquifer-codex1534-full-20260911-r3",
+    "artifacts/harbor-aquifer-codex1534-preflight-20260911",
+    "artifacts/harbor-aquifer-codex1534-preflight-20260911b",
+    "artifacts/harbor-aquifer-codex1534-terra-full-20260911",
+    "artifacts/harbor-hysteretic-aquifer-control-20260911-reviewed",
+    "artifacts/harbor-hysteretic-aquifer-control-live-20260911",
+    "artifacts/harbor-jobs",
+    "artifacts/harbor-sparse-network-assimilation-high-20260911"
+  ],
+  "original_databases_archived_outside_submission": "/data/hy/wenwu/sft-gateway-local-captures-20260911",
+  "regression_test_sources_retained": true
+}

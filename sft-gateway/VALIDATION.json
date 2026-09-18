@@ -1,0 +1,365 @@
+{
+  "version": "0.3.2",
+  "date": "2026-09-12",
+  "tests": {
+    "passed": 138,
+    "pytest": "8.4.2",
+    "python": "3.11.5",
+    "installed_wheel": true,
+    "log": "/data/hy/wenwu/sft-gateway-validation-032/final-pytest.log"
+  },
+  "docstrings": {
+    "modules": 21,
+    "classes": 18,
+    "functions": 142,
+    "missing": 0
+  },
+  "shell_syntax": "passed",
+  "compileall": "passed",
+  "independent_review": "Previously reported findings fixed; bounded follow-up review passed.",
+  "harbor": {
+    "version": "0.22.0",
+    "codex_version": "0.153.4",
+    "model": "glm-5.3-responses",
+    "reasoning_effort": "high",
+    "task": "group-summary-smoke",
+    "gateway_path": "/v1/responses",
+    "custom_run_id": false,
+    "native_session": "01a092d5-d495-73e2-b05c-45ba9d02233a",
+    "task_timeout_seconds": 28800,
+    "image": "saf/tb-science-seed:tb-science-v0.1-hysteretic-aquifer-control-82eb416d81d71218",
+    "image_id": "sha256:0415f904891ab9f64ef6611208b1d499bfa4b989b3133fd5d83699e9dfa6681a",
+    "exit_code": 0,
+    "reward": 1.0,
+    "started_at": "2026-09-12T07:37:57.267322",
+    "finished_at": "2026-09-12T07:38:54.193668",
+    "stats": {
+      "n_completed_trials": 1,
+      "n_errored_trials": 0,
+      "n_running_trials": 0,
+      "n_pending_trials": 0,
+      "n_cancelled_trials": 0,
+      "n_retries": 0,
+      "evals": {
+        "codex__glm-5.3-responses__adhoc": {
+          "n_trials": 1,
+          "n_errors": 0,
+          "metrics": [
+            {
+              "mean": 1.0
+            }
+          ],
+          "pass_at_k": {},
+          "reward_stats": {
+            "reward": {
+              "1.0": [
+                "task__2RizGDm"
+              ]
+            }
+          },
+          "exception_stats": {}
+        }
+      },
+      "n_input_tokens": 64260,
+      "n_cache_tokens": 61440,
+      "n_output_tokens": 1333,
+      "cost_usd": null
+    },
+    "source_result": "/data/hy/wenwu/sft-gateway-validation-032/final-native/jobs/sft032-final-native-smoke/result.json"
+  },
+  "sft": {
+    "stats": {
+      "records_total": 7,
+      "trajectories": 1,
+      "samples": 7,
+      "skipped": 0,
+      "tool_calls": 6,
+      "tool_outputs": 6,
+      "pending_tool_calls": 0,
+      "tool_issues": 0,
+      "parallel_tool_trajectories": 0,
+      "sft_trajectories": 1,
+      "sft_skipped_incomplete": 0,
+      "eligible": 1,
+      "rejected": 0,
+      "snapshot_request_ids": [
+        "req_62dab70f5ad25ae0c58046d0",
+        "req_f3b2ee3729db2106b0dc8302",
+        "req_c300e0af23aadfa8553e825d",
+        "req_3a08832d86df937370dafb20",
+        "req_76239326daeca0a1d5044d9a",
+        "req_d0255e36fda88d4ae7a96b60",
+        "req_020da3cc5f7b884f2c390342"
+      ]
+    },
+    "messages": 25,
+    "message_provenance_checked": true,
+    "manifest_checked": true,
+    "real_parallel_tools_observed": false,
+    "sample": "/data/hy/wenwu/sft-gateway-validation-032/final-native/export/sample.json"
+  },
+  "historical_replay": {
+    "aquifer": {
+      "stats": {
+        "records_total": 114,
+        "trajectories": 1,
+        "samples": 112,
+        "skipped": 2,
+        "recovered_completed_streams": 20,
+        "tool_calls": 112,
+        "tool_outputs": 111,
+        "pending_tool_calls": 1,
+        "tool_issues": 0,
+        "parallel_tool_trajectories": 0
+      },
+      "eligible": 0,
+      "rejection_reasons": [
+        [
+          "unresolved_or_invalid_tools"
+        ]
+      ],
+      "seconds": 54.78
+    },
+    "hysteretic": {
+      "stats": {
+        "records_total": 40,
+        "trajectories": 39,
+        "samples": 39,
+        "skipped": 1,
+        "tool_calls": 780,
+        "tool_outputs": 741,
+        "pending_tool_calls": 39,
+        "tool_issues": 0,
+        "parallel_tool_trajectories": 0
+      },
+      "eligible": 0,
+      "rejection_reasons": [
+        [
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ],
+        [
+          "prompt_prefix_history_mismatch",
+          "unobserved_assistant_history",
+          "unresolved_or_invalid_tools"
+        ]
+      ],
+      "seconds": 3.93
+    },
+    "v031-smoke": {
+      "stats": {
+        "records_total": 8,
+        "trajectories": 1,
+        "samples": 8,
+        "skipped": 0,
+        "tool_calls": 7,
+        "tool_outputs": 7,
+        "pending_tool_calls": 0,
+        "tool_issues": 0,
+        "parallel_tool_trajectories": 0
+      },
+      "eligible": 1,
+      "rejection_reasons": [
+        []
+      ],
+      "seconds": 0.14
+    }
+  },
+  "preservation": {
+    "original_files_checked": 26,
+    "changed": 0,
+    "artifact_directories": [
+      "harbor-aquifer-codex1534-glm53-full-20260911",
+      "harbor-hysteretic-aquifer-control-20260911"
+    ]
+  },
+  "limitations": [
+    "Live smoke is serial; asynchronous results validated by regression tests.",
+    "SFT eligibility does not imply task completion or reward.",
+    "No guarantee of recovery without identity/context evidence."
+  ]
+}

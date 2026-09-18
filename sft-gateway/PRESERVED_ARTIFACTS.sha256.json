@@ -1,0 +1,32 @@
+{
+  "harbor-aquifer-codex1534-glm53-full-20260911": {
+    "raw_records.jsonl": "99b231b890cc46f38d8bf2a9447f8ac105c342c7787c517cd8a136314fa68e0f",
+    "trajectories.native.jsonl": "5ce51951e1ec794c8d6ffc44745daab9b0c33adb8b099e086ae4567a7bc43832",
+    "sample.incomplete.json": "63b04631efb019c0dac00e5d89022ab5d3b494110390ac560c2ca6242b101a0b",
+    "sft_samples.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "export_report.json": "74e8aeb0fd4e1393f8d27b217362143146c9ef7ddac1df12487c1769ae232846",
+    "sft_samples.incomplete.json": "9b3a9e4da3a78234073423442c109a66a7830056a325bd129e31925db3e98806",
+    "samples.messages.jsonl": "e027d9cd0b9891fdd4ffaabfe0a82441ee80c8748cfb6133a523cee1c10ebd3c",
+    "sft_samples.incomplete.jsonl": "279c1b79e93cdc1f6b0c85a07838806035f0da43ca14fd2b64618ad64b566ec0",
+    "sft_samples.pretty.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "sft_samples.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "trajectories.messages.jsonl": "23c236885d334cf713670025ea562354c9d4963bd4035ae822a8e6ab0c6c0548"
+  },
+  "harbor-hysteretic-aquifer-control-20260911": {
+    "capture.sqlite-shm": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+    "capture.sqlite-wal": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "raw_records.jsonl": "afca90ff133a2533b2bf6837ca3ffbe4cc3ad5d820d44efa4c6d0b3fe4c6b086",
+    "sample.incomplete.json": "d658765dd6e9f3e6eeda3dadc550826db3a1f0175a92769c78e44449eff8124b",
+    "sft_samples.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "export_report.json": "fef31b23d4a94e4206921cd23cd869dbe5e4d5e41bcac3fc3eec21786bbd6324",
+    "sft_samples.incomplete.json": "32ae19e28810a4acd8a6246fdabd4eb3dde8470262de4320e9bf246fd311621a",
+    "cache-audit.json": "c1c37a3e2a0de179a7a05e14e5dfc68ea0436b2c6e935e5be37bd92ee8b0189f",
+    "BENCHMARK_ONLY.md": "7a2f11d02ba67115db1ae9d5d6c11650620b546606422b32b4c152ecdb6ce9ea",
+    "samples.messages.jsonl": "856e1b0b8ec071b49e726b9e1930727f0eb9ee603053f7012fc838541ab9f65b",
+    "sft_samples.incomplete.jsonl": "d60fb9c255466d49346cf57b740fda7da320bc12b23c3a93638e398c9827a4a1",
+    "sft_samples.pretty.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "capture.sqlite": "4ce1ec46b055b8204c05a57d6b2b2f94b6bfe6cd9443753c12a79659fe4b4493",
+    "sft_samples.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "trajectories.messages.jsonl": "06952b6a8e9250be1a48ed8ebd558b6ed196d0d735b725e70ad350f280c8b82c"
+  }
+}

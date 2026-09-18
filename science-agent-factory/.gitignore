@@ -1,0 +1,11 @@
+.env
+.venv/
+.harbor-venv/
+var/
+dist/
+configs/server.yaml
+release-manifest.json
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc

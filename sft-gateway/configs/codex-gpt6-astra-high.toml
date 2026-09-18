@@ -1,0 +1,7 @@
+# Harbor/Codex configuration for models that are not in the bundled catalog.
+# Input: mounted Codex configuration; output: high reasoning effort and enabled
+# reasoning-summary capability. This file contains no endpoint or credential.
+# The container receives a gateway credential through its environment; the
+# external billing/upstream key belongs only to the gateway process.
+model_reasoning_effort = "high"
+model_supports_reasoning_summaries = true
