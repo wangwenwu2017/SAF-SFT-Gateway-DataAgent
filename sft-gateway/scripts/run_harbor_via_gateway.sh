@@ -8,12 +8,15 @@ umask 077
 # The gateway reads the upstream billing key; the container receives a separate
 # generated/configured gateway key through native OPENAI_API_KEY authentication.
 # Exit status prefers a Harbor failure, otherwise the export command's status.
+# Required environment: SFT_ENV_FILE (env file with SAF_CODEX_* upstream credentials),
+# SFT_CODEX_RUNTIME (native codex-cli 0.153.4 directory), and SFT_DOCKER_HOST or
+# SAF_DOCKER_HOST (daemon holding the prewarmed image).
 # Requires the local Python/Harbor/Docker tools, a prepared task, and mounted
 # Codex runtime. Task completion and Harbor verification are not implied by SFT
 # export success; inspect Harbor's result and the gateway export report separately.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENV_FILE="${SFT_ENV_FILE:-/data/hy/wenwu/science-agent-factory/.env}"
+ENV_FILE="${SFT_ENV_FILE:-}"
 TASK_PATH="${1:-}"
 if [[ -z "$TASK_PATH" || "$TASK_PATH" == "--help" || "$TASK_PATH" == "-h" ]]; then
   echo "usage: $0 TASK_PATH [-- extra harbor run options]" >&2
@@ -22,6 +25,10 @@ fi
 shift
 if [[ "${1:-}" == "--" ]]; then shift; fi
 
+if [[ -z "$ENV_FILE" ]]; then
+  echo "SFT_ENV_FILE is required: set it to the env file holding SAF_CODEX_BASE_URL and SAF_CODEX_API_KEY" >&2
+  exit 2
+fi
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "missing env file: $ENV_FILE" >&2
   exit 2
@@ -48,7 +55,7 @@ DB_PATH="${SFT_DB:-$ROOT_DIR/data/harbor/$RUN_ID.sqlite}"
 JOBS_DIR="${HARBOR_JOBS_DIR:-$ROOT_DIR/artifacts/harbor-jobs}"
 MODEL="${SFT_MODEL:-gpt-6-astra}"
 CODEX_CONFIG="${SFT_CODEX_CONFIG:-$ROOT_DIR/configs/codex-gpt6-astra-high.toml}"
-CODEX_RUNTIME="${SFT_CODEX_RUNTIME:-/data/hy/wenwu/science-agent-factory/var/tb-science-official-v0.1.0-astra/codex-runtime-0.1534}"
+CODEX_RUNTIME="${SFT_CODEX_RUNTIME:-}"
 CODEX_WRAPPER="${SFT_CODEX_WRAPPER:-$ROOT_DIR/scripts/codex-runtime-launcher.sh}"
 PREWARMED_TASK="${SFT_PREWARMED_TASK:-$TASK_PATH}"
 PREWARMED_IMAGE="${SFT_PREWARMED_IMAGE:-$(python - "$PREWARMED_TASK/task.toml" <<'PY'
@@ -62,6 +69,10 @@ HARBOR_CONFIG="${SFT_HARBOR_CONFIG:-$ROOT_DIR/data/harbor-$RUN_ID.config.json}"
 # and shared artifacts. The current script does not remove it on exit.
 mkdir -p "$(dirname "$DB_PATH")" "$JOBS_DIR"
 
+if [[ -z "$CODEX_RUNTIME" ]]; then
+  echo "SFT_CODEX_RUNTIME is required: set it to the native Codex runtime directory to bind-mount as /opt/codex (codex-cli 0.153.4)" >&2
+  exit 2
+fi
 if [[ ! -d "$CODEX_RUNTIME" ]]; then
   echo "missing Codex runtime directory: $CODEX_RUNTIME" >&2
   exit 2
