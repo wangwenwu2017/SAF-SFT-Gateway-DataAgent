@@ -49,7 +49,7 @@ Seed  ──►  SAF Builder / Distiller / Auditor  ──►  Harbor Task
 ### 1. 克隆并安装
 
 ```bash
-git clone git@github.com:wangwenwu2017/SAF-SFT-Gateway.git
+git clone git@github.com:KnowledgeXLab/SAF-SFT-Gateway.git
 cd SAF-SFT-Gateway
 make install        # = install-saf（uv sync）+ install-gateway（venv + pip）
 ```

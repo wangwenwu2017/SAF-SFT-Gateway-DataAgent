@@ -57,7 +57,7 @@
 本子项目位于单体仓库 `SAF-SFT-Gateway` 内（`science-agent-factory/`）。Git 操作作用于**仓库根**，
 统一遵循根 `AGENTS.md`：
 
-- `origin` 指向 GitHub `wangwenwu2017/SAF-SFT-Gateway`，默认分支 `main`。
+- `origin` 指向 GitHub `KnowledgeXLab/SAF-SFT-Gateway`，默认分支 `main`。
 - 工作区状态、提交范围以及 `.env`、`configs/server.yaml`、`configs/local.yaml` 等忽略项，均以仓库根为准。
 - 禁止强推、变基或删除已推送的共享历史；回退使用 `git revert` 形成可审计的新提交。
 - 推送前在仓库根运行 `make check`，或在本子项目运行完整门禁（见上一节）。

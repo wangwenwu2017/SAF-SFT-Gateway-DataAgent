@@ -12,7 +12,7 @@
 
 ## Git 与 GitHub 工作流
 
-- `origin` 指向 GitHub 仓库 `wangwenwu2017/SAF-SFT-Gateway`，默认分支 `main`。
+- `origin` 指向 GitHub 仓库 `KnowledgeXLab/SAF-SFT-Gateway`，默认分支 `main`。
 - 提交身份：`user.name=wenwu`，`user.email=wangwenwu22@mails.ucas.ac.cn`。
 - 直接向 `main` 提交即可；改动大或需评审时另开分支并发起 Pull Request，合并回 `main`。
 - 禁止强推、变基或删除已推送的共享历史；回退一律使用 `git revert` 生成可审计的新提交。
