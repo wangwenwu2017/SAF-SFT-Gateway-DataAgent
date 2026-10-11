@@ -183,6 +183,7 @@ def main(argv: list[str] | None = None) -> int:
                     "projection_source": "leaf.context + leaf.target in item order",
                     "message_sources": _message_provenance(trajectory),
                     "turns": [{"request_id": turn.request_id, "parent_request_id": turn.parent_request_id,
+                               "response_source": turn.response_source,
                                "link_method": turn.link_method, "prefix_length": turn.prefix_length,
                                "context_items": len(turn.context), "target_items": len(turn.target),
                                "effective_context": turn.context} for turn in trajectory.turns],

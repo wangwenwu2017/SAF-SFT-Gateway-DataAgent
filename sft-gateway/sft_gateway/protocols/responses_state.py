@@ -54,6 +54,8 @@ class ResponsesStreamState:
         self.status = "unknown"
         self.usage: dict[str, Any] | None = None
         self.errors: list[dict[str, Any]] = []
+        self.done_items: dict[int, dict[str, Any]] = {}
+        self.invalid_done_sequence = False
 
     def _index(self, event: dict[str, Any], item: dict[str, Any] | None = None) -> int:
         """输入事件及可选 item，返回 output 索引并登记 ID、占位 item。
@@ -142,7 +144,13 @@ class ResponsesStreamState:
 
         item = event.get("item")
         if kind in {"response.output_item.added", "response.output_item.done"} and isinstance(item, dict):
-            self._item(event)
+            current = self._item(event)
+            if kind == "response.output_item.done":
+                # Reuse the index assigned above, including anonymous items;
+                # allocating twice would change the original capture snapshot.
+                index = next(index for index, value in self.items.items() if value is current)
+                self.invalid_done_sequence |= index in self.done_items or self.status in {"completed", "failed", "incomplete"}
+                self.done_items[index] = deepcopy(item)
             return
         if kind in {"response.content_part.added", "response.content_part.done"}:
             current = self._item(event)
@@ -207,3 +215,38 @@ class ResponsesStreamState:
             response.setdefault("id", self.response_id)
             response.setdefault("status", self.status)
         return ResponsesSnapshot(self.response_id, self.status, response, deepcopy(output), self.usage, self.errors)
+
+    def replay_response(self) -> dict[str, Any] | None:
+        """从已记录 SSE 构造客户端回放视图，原始终态快照保持不变。
+
+        使用完整、顺序明确的 output_item.done；只有 reasoning 的两份非空
+        密文可不同，仍要求 item ID、正文和工具参数一致。缺项、重复、
+        重排或可见内容冲突抛 ValueError，供导出器隔离该记录。
+        """
+        from ..trajectory.conversation_index import _canonical_item
+
+        response = deepcopy(self.finalize().response)
+        if not self.done_items or response is None:
+            return response
+        indices = sorted(self.done_items)
+        if self.invalid_done_sequence or indices != list(range(len(indices))) or set(self.items) != set(indices):
+            raise ValueError("incomplete or duplicate output_item.done sequence")
+        done = [self.done_items[index] for index in indices]
+        advertised = self.response.get("output")
+        if isinstance(advertised, list) and advertised:
+            if len(advertised) != len(done):
+                raise ValueError("output_item.done count differs from terminal output")
+            for item, final in zip(done, advertised, strict=True):
+                if not isinstance(final, dict) or item.get("id") != final.get("id"):
+                    raise ValueError("output_item.done identity differs from terminal output")
+                left, right = _canonical_item(item), _canonical_item(final)
+                if (item.get("type") == "reasoning" and final.get("type") == "reasoning"
+                        and isinstance(item.get("id"), str) and item["id"]
+                        and all(isinstance(x.get("encrypted_content"), str) and x["encrypted_content"] for x in (left, right))):
+                    # Select the observed client-consumed ciphertext; never
+                    # normalize ciphertext during cross-request matching.
+                    right["encrypted_content"] = left["encrypted_content"]
+                if left != right:
+                    raise ValueError("output_item.done content conflicts with terminal output")
+        response["output"] = deepcopy(done)
+        return response

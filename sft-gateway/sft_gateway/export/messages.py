@@ -40,6 +40,7 @@ def _turn_metadata(turn: CompletedCompletion) -> dict[str, Any]:
         "target_item_count": len(turn.target),
         "capture_status": turn.capture_status,
         "recovered_from_events": turn.recovered_from_events,
+        "response_source": turn.response_source,
     }
 
 

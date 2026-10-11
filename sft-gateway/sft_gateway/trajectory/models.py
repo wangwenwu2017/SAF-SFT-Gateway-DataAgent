@@ -17,7 +17,7 @@ from ..gateway.detection import Protocol
 class CompletedCompletion:
     """一轮已经完成的请求/响应记录。
 
-    ``request``/``response`` 是原始 JSON，``context``/``target`` 是协议适配
+    ``request`` 是原始 JSON，``response`` 是有效响应视图，``context``/``target`` 是协议适配
     后的有序快照；索引不会重新生成 target。``parent_request_id``、
     ``link_method`` 和 ``prefix_length`` 解释父节点的推断来源。
     输入字段由捕获导出层构造，实例输出给 ConversationIndex。dataclass 本身
@@ -43,6 +43,7 @@ class CompletedCompletion:
     capture_status: str | None = None
     recovered_from_events: bool = False
     eligibility_reasons: list[str] = field(default_factory=list)
+    response_source: str = "stored_response"
 
 
 @dataclass
