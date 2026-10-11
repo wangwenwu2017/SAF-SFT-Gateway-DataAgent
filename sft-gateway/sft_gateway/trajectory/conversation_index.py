@@ -39,6 +39,18 @@ def _canonical_item(value: Any, *, _top_level: bool = True) -> Any:
         for key, item in value.items():
             if key in ignored:
                 continue
+            assistant_item = _top_level and (
+                value.get("type") in {"reasoning", "function_call", "custom_tool_call"}
+                or value.get("type") == "message" and value.get("role") == "assistant"
+            )
+            if assistant_item and key == "metadata" and isinstance(item, dict):
+                # Codex replays protocol items without the transport turn label.
+                # Other metadata remains significant, including nested tool data.
+                item = {k: v for k, v in item.items() if not (k == "turn_id" and isinstance(v, str))}
+                if not item:
+                    continue
+            if _top_level and value.get("type") == "reasoning" and key == "content" and item == []:
+                continue
             if _top_level and value.get("type") == "reasoning" and key == "encrypted_content" and item is None:
                 continue
             if key in {"content", "summary"} and isinstance(item, list):
@@ -46,7 +58,9 @@ def _canonical_item(value: Any, *, _top_level: bool = True) -> Any:
                 # content parts.  It has no semantic effect, unlike arbitrary
                 # nested annotations supplied by a user/tool.
                 result[key] = [
-                    {part_key: part_value for part_key, part_value in part.items() if not (part_key == "annotations" and part_value == [])}
+                    {part_key: part_value for part_key, part_value in part.items()
+                     if not (part_value == [] and (part_key == "annotations"
+                         or assistant_item and part.get("type") == "output_text" and part_key == "logprobs"))}
                     if isinstance(part, dict) else part
                     for part in item
                 ]

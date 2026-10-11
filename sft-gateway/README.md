@@ -76,6 +76,16 @@ sft-gateway export <run-or-session-id> \
 
 `provenance.json` 中 `eligible=true` 仅表示符合当前文本投影契约，不表示任务成功。工具未返回、无法证明父链、配置变化、上下文压缩、未知关键 item、多模态内容或缺少监督来源都会排除正常 SFT。
 
+Responses 流的原始终态快照与 SSE 事件均保留。导出时重放 SSE：完整的
+`response.output_item.done` 序列作为客户端回放视图，`response.completed`
+提供完成状态。两者的 item ID、顺序、正文和工具参数必须一致；同一 reasoning
+item 的非空密文允许不同，选取实际 done 事件中的密文，并在跨请求关联时严格核对。
+历史比较只规范化助手协议项的 `metadata.turn_id`、空 reasoning `content`、
+空文本 `logprobs` 等传输差异，保留业务 metadata、非空字段、phase 和工具标识。
+缺项、重复、终态后追加 item 或可见内容冲突会排除该记录。
+`provenance.json` 的 `turns[].response_source` 标注 `responses_sse_replay` 或
+`stored_response`。旧数据库可通过原有 `export` 命令离线重导，无需再次调用模型。
+
 ## Harbor 与预热镜像
 
 ```bash
@@ -117,3 +127,5 @@ bash -n scripts/run_harbor_via_gateway.sh
 测试使用模拟上游和临时数据库，不调用真实计费模型。导入 CLI/应用不建库；导出以只读连接读取一致快照。写模式升级旧 schema 前创建 `.pre-v3.bak` 备份，不伪造旧请求的原始 bytes。
 
 这是共享凭据的受控网关，不是多租户授权服务。没有会话身份、发生服务端不可见状态变化，或密文上下文不能比较时，不能保证每个任务都恢复为一条完整样本。保持原始证据和拒绝理由，比强行拼接更重要。
+
+上游 HTTP 客户端由应用生命周期管理，实例内请求复用连接；SSE 在同一接收块内批量提交事件，事务完成后才转发。正常关闭会释放连接池和 SQLite；强制进程退出仍只能保存已经接收并持久化的证据。

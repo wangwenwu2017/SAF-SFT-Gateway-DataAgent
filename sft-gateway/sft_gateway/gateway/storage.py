@@ -279,9 +279,14 @@ class Storage:
     def add_event(self, request_id: str, sequence: int, event_name: str | None, data: dict[str, Any] | None, raw_frame: bytes) -> None:
         """输入 request_id、请求内序号、事件名、JSON 和原始帧，提交一个事件。
         返回 None 表示事务已提交；同序号替换。不保留跨网络等待的事务，数据库异常向上传播。"""
+        self.add_events(request_id, [(sequence, event_name, data, raw_frame)])
+
+    def add_events(self, request_id: str, events: list[tuple[int, str | None, dict[str, Any] | None, bytes]]) -> None:
+        """按接收块原子提交 SSE 事件；提交成功后调用者才可转发该块。"""
+        rows = [(request_id, sequence, name, json.dumps(data, ensure_ascii=False) if data is not None else None, raw)
+                for sequence, name, data, raw in events]
         with self.lock, self.db:
-            self.db.execute("INSERT OR REPLACE INTO stream_events VALUES (?,?,?,?,?)", (request_id, sequence, event_name, json.dumps(data, ensure_ascii=False) if data is not None else None, raw_frame))
-            self.db.commit()
+            self.db.executemany("INSERT OR REPLACE INTO stream_events VALUES (?,?,?,?,?)", rows)
 
     def finish(self, request_id: str, *, status: str, status_code: int | None, response: dict[str, Any] | None, raw_body: bytes | None, response_id: str | None, previous_response_id: str | None, error: str | None = None) -> None:
         """关闭请求并写入响应快照、关联 response IDs 与可选错误文本。

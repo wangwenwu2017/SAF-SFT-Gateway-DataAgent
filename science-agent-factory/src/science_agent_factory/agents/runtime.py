@@ -5,6 +5,7 @@
 输入：配置、任务制品或状态数据、当前工厂 Python 解释器路径。
 输出：交付 Schema（含构建内设计卡）、校验后的数据或明确异常。
 副作用与边界：创建和恢复隔离会话、流式保存 SDK 进度并有界中断超时任务；API 模式直连外部 Responses 服务；有限修复交付；清理自身资源。审查和蒸馏仅读取暂存证据，不承担 Solver 或验证执行。
+禁用可持久化环境变量的 shell 调试快照；其余会话与进度证据仍按原协议保存。
 """
 
 from __future__ import annotations
@@ -307,7 +308,7 @@ class CodexRuntime:
         event_path = agent_workspace.event_path
         event_path.parent.mkdir(parents=True, exist_ok=True)
         provider_base_url = "" if subscription else self.settings.codex.base_url
-        overrides = [f'model_reasoning_effort="{profile.reasoning_effort}"']
+        overrides = [f'model_reasoning_effort="{profile.reasoning_effort}"', "features.shell_snapshot=false"]
         model_provider = "openai" if subscription else None
         if subscription:
             overrides.extend(

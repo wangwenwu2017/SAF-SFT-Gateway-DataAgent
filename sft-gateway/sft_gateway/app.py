@@ -125,17 +125,28 @@ def make_app(upstream: str | None = None, db_path: str | None = None, *, transpo
         storage.close()
         raise ValueError("capture limits must be positive")
 
+    upstream_client = httpx.AsyncClient(
+        base_url=config.upstream_base_url, transport=transport,
+        timeout=httpx.Timeout(config.request_timeout_seconds, connect=30.0),
+        limits=httpx.Limits(max_connections=config.max_concurrent_requests,
+                           max_keepalive_connections=config.max_concurrent_requests),
+    )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         """管理本 app 的正常 ASGI 生命周期。
 
         输入：FastAPI 实例（无需使用）；输出：异步上下文的空 yield。退出时关闭
         SQLite；不是按请求的清理钩子，不负责导出文件或补齐中断模型响应。"""
-        yield
-        await _storage_call(storage.close, )
+        try:
+            yield
+        finally:
+            await upstream_client.aclose()
+            await _storage_call(storage.close, )
 
     app = FastAPI(title="SFT Gateway", version="0.3.2", lifespan=lifespan)
     app.state.storage = storage
+    app.state.upstream_client = upstream_client
     app.add_middleware(_ConcurrencyLimit, limit=config.max_concurrent_requests)
 
     def _validated_id(value: Any) -> str:
@@ -249,14 +260,10 @@ def make_app(upstream: str | None = None, db_path: str | None = None, *, transpo
             auth = None
         if auth:
             headers["authorization"] = auth
-        kwargs: dict[str, Any] = {"timeout": httpx.Timeout(30.0, connect=10.0)}
-        if transport is not None:
-            kwargs["transport"] = transport
         upstream_path = _upstream_path(config.upstream_base_url, path)
         target = f"{upstream_path}?{request.url.query}" if request.url.query else upstream_path
-        async with httpx.AsyncClient(base_url=config.upstream_base_url, **kwargs) as client:
-            async with client.stream("GET", target, headers=headers) as response:
-                raw = await _bounded_body(response, config.max_response_bytes)
+        async with upstream_client.stream("GET", target, headers=headers, timeout=30.0) as response:
+            raw = await _bounded_body(response, config.max_response_bytes)
         return Response(raw, response.status_code, headers=_response_headers(response.headers))
 
     def _require_admin(request: Request) -> None:
@@ -332,15 +339,11 @@ def make_app(upstream: str | None = None, db_path: str | None = None, *, transpo
             auth = None
         if auth:
             headers["authorization"] = auth
-        kwargs: dict[str, Any] = {"timeout": httpx.Timeout(config.request_timeout_seconds, connect=30.0)}
-        if transport is not None:
-            kwargs["transport"] = transport
         if body.get("stream") is True:
-            return await _stream(request_id, resolved_run, protocol, target, body, wire_body, headers, kwargs)
+            return await _stream(request_id, resolved_run, protocol, target, body, wire_body, headers)
         try:
-            async with httpx.AsyncClient(base_url=config.upstream_base_url, **kwargs) as client:
-                async with client.stream("POST", target, content=wire_body, headers=headers) as response:
-                    raw = await _bounded_body(response, config.max_response_bytes)
+            async with upstream_client.stream("POST", target, content=wire_body, headers=headers) as response:
+                raw = await _bounded_body(response, config.max_response_bytes)
         except (httpx.HTTPError, ValueError) as exc:
             await _storage_call(storage.finish, request_id, status="upstream_error", status_code=None, response=None, raw_body=None, response_id=None, previous_response_id=_adapter(protocol).previous_response_id(body), error=str(exc))
             raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -363,16 +366,15 @@ def make_app(upstream: str | None = None, db_path: str | None = None, *, transpo
         await _storage_call(storage.finish, request_id, status=status, status_code=response.status_code, response=parsed, raw_body=raw, response_id=rid, previous_response_id=adapter.previous_response_id(body), error=None if response.is_success else raw.decode(errors="replace"))
         return Response(raw, response.status_code, headers=_response_headers(response.headers))
 
-    async def _stream(request_id: str, run_id: str, protocol: Protocol, path: str, body: dict[str, Any], raw_body: bytes, headers: dict[str, str], kwargs: dict[str, Any]) -> Response:
+    async def _stream(request_id: str, run_id: str, protocol: Protocol, path: str, body: dict[str, Any], raw_body: bytes, headers: dict[str, str]) -> Response:
         """打开 SSE 上游并返回 StreamingResponse；输入请求标识、协议、正文、headers 和客户端配置。
         每个事件先持久化再向下游转发，限定帧和总字节数；错误响应按非流式上限读取。
         异常或取消会保留不完整状态，关闭连接；原始流仅指 HTTPX 解压后的正文。"""
-        client = httpx.AsyncClient(base_url=config.upstream_base_url, **kwargs)
+        client = upstream_client
         target = path
         try:
             upstream_response = await client.send(client.build_request("POST", target, content=raw_body, headers=headers), stream=True)
         except (httpx.HTTPError, ValueError) as exc:
-            await client.aclose()
             await _storage_call(storage.finish, request_id, status="upstream_error", status_code=None, response=None, raw_body=None, response_id=None, previous_response_id=_adapter(protocol).previous_response_id(body), error=str(exc))
             raise HTTPException(status_code=502, detail=str(exc)) from exc
         if upstream_response.status_code >= 400:
@@ -385,7 +387,6 @@ def make_app(upstream: str | None = None, db_path: str | None = None, *, transpo
             finally:
                 with anyio.CancelScope(shield=True):
                     await upstream_response.aclose()
-                    await client.aclose()
             await _storage_call(storage.finish, request_id, status="upstream_error", status_code=upstream_response.status_code, response=None, raw_body=raw, response_id=None, previous_response_id=_adapter(protocol).previous_response_id(body), error=raw.decode(errors="replace"))
             return Response(raw, upstream_response.status_code, headers=_response_headers(upstream_response.headers))
 
@@ -431,12 +432,19 @@ def make_app(upstream: str | None = None, db_path: str | None = None, *, transpo
                     if total_bytes > config.max_stream_bytes:
                         raise ValueError("stream exceeds configured limit")
                     raw_parts.append(chunk)
+                    events = []
+                    decoded = []
                     for event in parser.feed(chunk):
                         data = event.json()
                         if isinstance(data, dict) and event.event and not data.get("type"):
                             data = {**data, "type": event.event}
-                        await _storage_call(storage.add_event, request_id, count, event.event, data, event.raw); count += 1
-                        consume_event(data, event.data.strip() == "[DONE]")
+                        events.append((count, event.event, data, event.raw))
+                        decoded.append((data, event.data.strip() == "[DONE]"))
+                        count += 1
+                    if events:
+                        await _storage_call(storage.add_events, request_id, events)
+                        for data, done in decoded:
+                            consume_event(data, done)
                     yield chunk
                 for event in parser.finish():
                     data = event.json()
@@ -464,7 +472,6 @@ def make_app(upstream: str | None = None, db_path: str | None = None, *, transpo
             finally:
                 with anyio.CancelScope(shield=True):
                     await upstream_response.aclose()
-                    await client.aclose()
         return StreamingResponse(iterator(), status_code=upstream_response.status_code, headers=_response_headers(upstream_response.headers), media_type=upstream_response.headers.get("content-type", "text/event-stream"))
 
     return app
@@ -628,6 +635,8 @@ def _build_export(rows: list[dict[str, Any]]) -> tuple[list[Any], dict[str, Any]
         if not target: skipped += 1; continue
         request = row["request"]
         completion = CompletedCompletion(row["request_id"], row["run_id"], protocol, row["model"], request, response, row.get("response_id") or adapter.response_id(response), row.get("previous_response_id") or adapter.previous_response_id(request), adapter.extract_context(request), target, context_fingerprint(protocol=protocol, model=row["model"], request=request), session_key=extract_native_session_id(row.get("request_headers", {})), capture_status=row.get("status"), recovered_from_events=recovered_row)
+        if protocol == Protocol.RESPONSES and response is not row.get("response") and row.get("events"):
+            completion.response_source = "responses_sse_replay"
         completions.append(completion)
         recovered += int(recovered_row)
     # Resolve explicit edges independently of capture arrival order. Within a
@@ -755,11 +764,13 @@ def _effective_response(row: dict[str, Any]) -> tuple[dict[str, Any] | None, boo
             # unsupported delta fields removed by the earlier implementation.
             if chat_chunks:
                 return _chat_snapshot(chat_chunks), False
+        if state is not None and terminal == "completed":
+            return state.replay_response(), False
         return stored, False
     if state is None or terminal != "completed":
         return None, False
-    snapshot = state.finalize()
-    return (snapshot.response, True) if isinstance(snapshot.response, dict) and snapshot.response.get("status") == "completed" else (None, False)
+    response = state.replay_response()
+    return (response, True) if isinstance(response, dict) and response.get("status") == "completed" else (None, False)
 
 
 def _merge_terminal(current: str, incoming: str) -> str:

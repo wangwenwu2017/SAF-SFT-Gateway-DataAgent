@@ -7,6 +7,7 @@
 AsyncCodex/Thread 和 HarborBuilderDelivery Schema。
 预期结果：两种认证入口不会静默互相回退；订阅预检成功时强制 ChatGPT/OpenAI provider，失败时保留稳定
 错误分类且不启动 Thread；构建内设计卡 Schema 可用，设计卡缺失进入同线程修复；Builder 恢复、有限交付修正与 API 网关行为正确；交付协议提供工厂解释器，避免误用宿主 Python。
+运行配置禁用可能持久化凭据环境的 shell 调试快照。
 """
 
 from __future__ import annotations
@@ -596,6 +597,7 @@ async def test_codex_routes_directly_to_external_responses_api(
     assert 'model_providers.saf_api.base_url="http://127.0.0.1:1/v1"' in overrides
     assert 'model_providers.saf_api.wire_api="responses"' in overrides
     assert 'model_providers.saf_api.env_key="SAF_CODEX_API_KEY"' in overrides
+    assert "features.shell_snapshot=false" in overrides
 
 
 @pytest.mark.asyncio
