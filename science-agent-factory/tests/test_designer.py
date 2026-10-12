@@ -3,7 +3,7 @@
 测试目的：验证真实 Data Designer 调度、原生任务生成边界和失败隔离。
 被测接口：designer.run_batch、generate_task。
 输入与夹具：临时 JSONL/配置/SeedBundle、替代科学生成后端和线程屏障。
-预期结果：两行确实并行，输出隔离，失败有记录，不调用 Solver 或覆盖旧批次。
+预期结果：两行确实并行，输出隔离，失败有记录，不调用 Distiller、Solver 或覆盖旧批次。
 """
 
 import asyncio
@@ -104,7 +104,7 @@ def test_batch_runs_native_audited_factory_without_solver(tmp_path, monkeypatch)
     results = designer.run_batch(path, tmp_path / "batch", concurrency=1)
     assert results[0]["status"] == "completed", results
     assert not runner.calls
-    assert {str(call[0]) for call in runtime.calls} == {"builder", "distiller", "auditor"}
+    assert {str(call[0]) for call in runtime.calls} == {"builder", "auditor"}
     for task in results[0]["task_paths"]:
         from pathlib import Path
 

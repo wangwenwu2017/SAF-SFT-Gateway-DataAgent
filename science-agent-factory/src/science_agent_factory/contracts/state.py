@@ -1,6 +1,6 @@
 """统一 Harbor 任务与固定槽位批次的持久状态。
 
-模块用途：候选设计卡随构建元数据归档，不设独立设计状态；统一 Harbor 任务与固定槽位批次的持久状态。
+模块用途：候选保存任务或任务加策略的预审范围，兼容旧状态缺失该字段；候选设计卡随构建元数据归档，不设独立设计状态；统一 Harbor 任务与固定槽位批次的持久状态。
 主要接口：RolloutResult、AttemptState、CandidateState、JobState、BatchState。
 输入：配置、任务制品或状态数据。
 输出：校验后的数据或明确异常。
@@ -66,6 +66,7 @@ class CandidateState(StrictModel):
     task_sha256: str | None = None
     strategy_card_path: str | None = None
     preflight_review: str | None = None
+    preflight_scope: Literal["task", "task_and_strategy"] | None = None
     final_review: str | None = None
     attempts: list[AttemptState] = Field(default_factory=list)
     last_error: str | None = None

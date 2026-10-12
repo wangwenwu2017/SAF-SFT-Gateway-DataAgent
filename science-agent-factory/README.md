@@ -117,8 +117,10 @@ saf-designer --requests requests.jsonl --out var/designer-batch --concurrency 2 
 {"request_id":"seed-b","seed":"seeds/b","config":"configs/local.yaml"}
 ```
 
-每行调用原生 `generate_tasks()`，执行 Builder、Distiller 和 preflight Auditor，停止在独立 Solver 前；配置必须为 `audited` 且允许原生执行。`--concurrency` 控制并行输入数，行内候选并发仍由 SAF 配置决定，两者相乘影响资源使用。
+每行调用原生 `generate_tasks()`，执行 Builder 和 preflight Auditor，跳过 Distiller，停止在独立 Solver 前；配置必须为 `audited` 且允许原生执行。`--concurrency` 控制并行输入数，行内候选并发仍由 SAF 配置决定，两者相乘影响资源使用。
 
 结果保存到 `OUT/results.json`；每项原生状态和任务位于 `OUT/items/<request_id>/jobs/generation/`，单项结果为 `OUT/items/<request_id>/result.json`；Data Designer 数据集位于 `OUT/designer/`。结果中的 `task_paths` 只包含预审接受的候选。所有候选接受才记为 `completed`，部分接受记为 `partial`；单项异常会记为 `failed`，不阻止其他输入执行。存在未完成项时命令返回非零退出码。
 
 输出目录必须是新目录，不自动重跑或覆盖旧批次。已有 job 的恢复沿用原生命令，配置中的 `storage_root` 需指向 `OUT/items/<request_id>`；批量调度入口不自动恢复。它不会自动提交 DataAgent 归档或启动 Harbor rollout。
+
+仅任务生成接口 `generate_tasks()` / `resume_generation()` 不蒸馏策略卡，Auditor 只审核任务及原生验证证据。显式恢复完整原生流程时，工厂会补做策略蒸馏和任务加策略审核，再进入 rollout；仅任务审核不会被当作策略审核。

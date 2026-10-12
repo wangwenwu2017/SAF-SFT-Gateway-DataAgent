@@ -803,3 +803,126 @@ async def test_interrupted_build_resumes_without_design_stage(tmp_path):
     assert result["status"] == "curated"
     assert len(runner.calls) == 1
     assert all(request.get("phase") != "design" for _, request, _ in runtime.calls)
+
+@pytest.mark.parametrize("verdict", ["accept", "revise", "reject", "interrupt", "distiller"])
+async def test_task_only_preflight_preserves_review_and_repair(tmp_path, verdict):
+    from science_agent_factory.contracts.reviews import BuilderReflection, DistillerReflection
+
+    class TaskRuntime(FakeRuntime):
+        preflights = 0
+
+        async def run_to_file(
+            self, role, workspace, message, output_type, output_relative_path, **kwargs
+        ):
+            request = json.loads(message)
+            if request.get("phase") == "preflight":
+                self.preflights += 1
+                assert request["review_scope"] == "task"
+                assert request["strategy_card_path"] is None
+                assert not (workspace.workspace / "inputs/strategy_card.json").exists()
+                if self.preflights == 1 and verdict == "interrupt":
+                    raise OSError("temporary auditor outage")
+            execution = await super().run_to_file(
+                role, workspace, message, output_type, output_relative_path, **kwargs
+            )
+            if request.get("phase") == "preflight" and self.preflights == 1:
+                if verdict == "reject":
+                    output = AuditReport(
+                        phase="preflight",
+                        decision="reject",
+                        target="none",
+                        summary="task is invalid",
+                    )
+                elif verdict == "revise":
+                    output = AuditReport(
+                        phase="preflight",
+                        decision="revise",
+                        target="builder",
+                        summary="repair task",
+                        builder_reflection=BuilderReflection(
+                            source_phase="preflight",
+                            failure_class="interface",
+                            issue_codes=["TASK_CONTRACT"],
+                            summary="repair task",
+                            evidence=["incorrect public output path"],
+                            required_actions=["fix public output path"],
+                            avoid_actions=["do not weaken verifier"],
+                            retryable=True,
+                        ),
+                    )
+                elif verdict == "distiller":
+                    output = AuditReport(
+                        phase="preflight",
+                        decision="revise",
+                        target="distiller",
+                        summary="unexpected strategy revision",
+                        distiller_reflection=DistillerReflection(
+                            source_revision=0,
+                            failure_class="interface",
+                            issue_codes=["STRATEGY_MISSING"],
+                            summary="missing strategy",
+                            public_contract_refs=["instruction.md"],
+                            required_actions=["write strategy"],
+                            avoid_actions=["no copying"],
+                        ),
+                    )
+                else:
+                    return execution
+                kwargs["delivery_validator"](output)
+                write_json(workspace.workspace / output_relative_path, output)
+                execution.output = output
+            return execution
+
+    settings = settings_for(tmp_path, "audited")
+    settings.pipeline.task_count = 1
+    seed, _ = _seed_bundle(tmp_path)
+    runtime, runner = TaskRuntime(), FakeRunner()
+    factory = ScienceAgentFactory(settings, runtime=runtime, runner=runner)
+    result = await factory.generate_tasks(seed, job_id="job")
+    if verdict == "interrupt":
+        assert result["status"] == "failed"
+        result = await factory.resume_generation("job")
+    assert result["status"] == (
+        "failed" if verdict in {"reject", "distiller"} else "tasks_ready"
+    ), result
+    assert not runner.calls
+    assert all(role != "distiller" for role, _, _ in runtime.calls)
+    candidate = result["candidates"][0]
+    assert candidate["strategy_card_path"] is None and not candidate["attempts"]
+    if result["status"] == "tasks_ready":
+        assert candidate["preflight_scope"] == "task"
+        assert (factory.job_dir("job") / candidate["task_dir"] / "task.toml").is_file()
+        before = len(runtime.calls)
+        assert (await factory.resume_generation("job"))["status"] == "tasks_ready"
+        assert len(runtime.calls) == before
+    if verdict == "distiller":
+        assert "task-only preflight" in candidate["last_error"]
+    if verdict == "revise":
+        assert sum(role == "builder" for role, _, _ in runtime.calls) == 2
+    if verdict == "interrupt":
+        assert sum(role == "builder" for role, _, _ in runtime.calls) == 1
+
+
+@pytest.mark.parametrize("collection_only", [False, True])
+async def test_full_resume_prepares_strategy_after_task_only_preflight(tmp_path, collection_only):
+    settings = settings_for(tmp_path, "audited")
+    settings.pipeline.task_count = 1
+    seed, _ = _seed_bundle(tmp_path)
+    runtime, runner = FakeRuntime(), FakeRunner()
+    factory = ScienceAgentFactory(settings, runtime=runtime, runner=runner)
+    task = await factory.generate_tasks(seed, job_id="job")
+    assert task["candidates"][0]["preflight_scope"] == "task"
+    assert not runner.calls
+    resume = factory.collect_tasks if collection_only else factory.resume
+    result = await resume("job")
+    assert result["status"] == "curated", result
+    assert result["candidates"][0]["preflight_scope"] == "task_and_strategy"
+    assert sum(role == "builder" for role, _, _ in runtime.calls) == 1
+    assert sum(role == "distiller" for role, _, _ in runtime.calls) == 1
+    scopes = [
+        request["review_scope"]
+        for _, request, _ in runtime.calls
+        if request.get("phase") == "preflight"
+    ]
+    assert scopes == ["task", "task_and_strategy"]
+    assert len(runner.calls) == 1

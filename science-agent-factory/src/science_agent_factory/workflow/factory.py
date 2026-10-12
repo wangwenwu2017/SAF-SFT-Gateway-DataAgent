@@ -1,6 +1,6 @@
 """Harbor-only 任务生成、审查与轨迹归档。
 
-模块用途：编排包含内部设计的单次 Builder 构建、后续审查与轨迹归档。
+模块用途：编排 Builder 构建和任务预审；仅任务生成跳过蒸馏，完整流程增加策略审核与轨迹归档。
 主要接口：ScienceAgentFactory.run、generate_tasks、resume_generation、resume、status、job_dir。
 输入：配置、任务制品或状态数据。
 输出：校验后的数据或明确异常。
@@ -216,19 +216,22 @@ class ScienceAgentFactory:
                         raise
                     await self._diagnose_build(state, candidate, exc)
             elif stage == CandidateStage.BUILT:
-                if state.workflow_mode == WorkflowMode.AUDITED:
-                    if candidate.strategy_card_path is None:
-                        await self._distill(state, candidate)
-                        await self._save(store, state, None)
-                    review = await self._audit(state, candidate, "preflight")
-                    if review.decision != "accept":
-                        self._revise(candidate, review)
-                        await self._save(store, state, None)
-                        continue
+                if state.workflow_mode == WorkflowMode.AUDITED and not await self._preflight(
+                    store, state, candidate, task_only=generation_only
+                ):
+                    continue
                 candidate.stage = CandidateStage.PREFLIGHT_ACCEPTED
             elif stage == CandidateStage.PREFLIGHT_ACCEPTED:
                 if generation_only:
                     break
+                if (
+                    state.workflow_mode == WorkflowMode.AUDITED
+                    and (
+                        candidate.preflight_scope == "task" or candidate.strategy_card_path is None
+                    )
+                    and not await self._preflight(store, state, candidate, task_only=False)
+                ):
+                    continue
                 current = [a for a in candidate.attempts if a.revision == candidate.revision]
                 if sum(a.accepted for a in current) >= self.settings.pipeline.required_trajectories:
                     candidate.stage = CandidateStage.CURATED
@@ -494,7 +497,17 @@ class ScienceAgentFactory:
         candidate.strategy_card_path = str(path.relative_to(root))
         candidate.distiller_thread_id = execution.thread_id
 
-    async def _audit(self, state, candidate, phase, attempt=None):
+    async def _preflight(self, store, state, candidate, *, task_only):
+        if not task_only and candidate.strategy_card_path is None:
+            await self._distill(state, candidate)
+            await self._save(store, state, None)
+        review = await self._audit(state, candidate, "preflight", task_only=task_only)
+        if review.decision != "accept":
+            self._revise(candidate, review)
+        await self._save(store, state, None)
+        return review.decision == "accept"
+
+    async def _audit(self, state, candidate, phase, attempt=None, *, task_only=False):
         root = self.job_dir(state.job_id)
         manager = WorkspaceManager(root)
         workspace = manager.create(
@@ -506,11 +519,12 @@ class ScienceAgentFactory:
         manager.stage(root / candidate.metadata_dir, workspace.workspace, "inputs/metadata")
         if phase == "preflight":
             manager.stage(Path(state.seed_dir), workspace.workspace, "inputs/seed")
-            manager.stage(
-                root / candidate.strategy_card_path,
-                workspace.workspace,
-                "inputs/strategy_card.json",
-            )
+            if not task_only:
+                manager.stage(
+                    root / candidate.strategy_card_path,
+                    workspace.workspace,
+                    "inputs/strategy_card.json",
+                )
         if attempt:
             attempt_root = root / attempt.result_dir
             manager.stage(attempt_root, workspace.workspace, "inputs/attempt")
@@ -542,6 +556,8 @@ class ScienceAgentFactory:
         def validate(review):
             if review.phase != phase:
                 raise ValueError("audit phase mismatch")
+            if task_only and review.target not in {"builder", "none"}:
+                raise ValueError("task-only preflight can only request Builder revision")
             if (
                 review.decision == "accept"
                 and phase == "final"
@@ -554,6 +570,7 @@ class ScienceAgentFactory:
             phase=phase,
             task_id=candidate.candidate_id,
             attempt_id=attempt.attempt_id if attempt else None,
+            task_only=task_only,
             delivery_validator=validate,
         )
         validate(execution.output)
@@ -563,6 +580,7 @@ class ScienceAgentFactory:
         write_json(path, execution.output)
         if phase == "preflight":
             candidate.preflight_review = str(path.relative_to(root))
+            candidate.preflight_scope = "task" if task_only else "task_and_strategy"
         else:
             candidate.final_review = str(path.relative_to(root))
             if attempt:

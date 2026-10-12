@@ -1,6 +1,6 @@
 """内部 SDK 三角色的任务消息和交付边界。
 
-模块用途：内部 SDK 三角色的任务消息和交付边界；Builder 一次调用完成设计与构建。
+模块用途：内部 SDK 三角色的任务消息和交付边界；Auditor 区分仅任务及任务加策略预审；Builder 一次调用完成设计与构建。
 主要接口：AgentRuntime、TaskBuilderAgent、DistillerAgent、AuditorAgent。
 输入：配置、任务制品或状态数据。
 输出：校验后的数据或明确异常。
@@ -159,6 +159,7 @@ class AuditorAgent:
         phase: str,
         task_id: str,
         attempt_id: str | None = None,
+        task_only: bool = False,
         delivery_validator=None,
     ) -> AgentExecution[AuditReport]:
         request = {
@@ -167,7 +168,12 @@ class AuditorAgent:
             "attempt_id": attempt_id,
             "task_root": "inputs/task",
             "metadata_root": "inputs/metadata",
-            "strategy_card_path": "inputs/strategy_card.json" if phase == "preflight" else None,
+            "review_scope": ("task" if task_only else "task_and_strategy")
+            if phase == "preflight"
+            else "trajectory",
+            "strategy_card_path": (
+                "inputs/strategy_card.json" if phase == "preflight" and not task_only else None
+            ),
             "attempt_root": "inputs/attempt" if attempt_id else None,
             "review_context_path": "inputs/review_context.json" if attempt_id else None,
             "goal": "只读审查任务质量、指导边界及真实 Harbor 结果；不得执行验证或修改任务。",
