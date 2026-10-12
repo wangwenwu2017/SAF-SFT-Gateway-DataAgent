@@ -101,3 +101,24 @@ Harbor 验证失败、超时、启动错误或没有有效 ATIF 时，audited �
 诊断不能接受训练样本；只能请求有预算的新尝试、依据具体证据修订任务，或拒绝候选。
 Auditor 自身失败会保持待审状态，恢复时只重审，不重跑已有 Solver Attempt。取消后需显式恢复才继续。
 本轮移除了 `codex.gateway_capture`；旧 `gateway_retries` / `gateway_backoff_s` 也不再接受。
+
+## Data Designer 并行任务合成（可选）
+
+安装 `uv sync --extra designer --extra dev`，然后运行：
+
+```bash
+saf-designer --requests requests.jsonl --out var/designer-batch --concurrency 2 --env-file .env
+```
+
+`requests.jsonl` 每行一个独立输入；路径相对 JSONL 所在目录解析：
+
+```json
+{"request_id":"seed-a","seed":"seeds/a","config":"configs/local.yaml"}
+{"request_id":"seed-b","seed":"seeds/b","config":"configs/local.yaml"}
+```
+
+每行调用原生 `generate_tasks()`，执行 Builder、Distiller 和 preflight Auditor，停止在独立 Solver 前；配置必须为 `audited` 且允许原生执行。`--concurrency` 控制并行输入数，行内候选并发仍由 SAF 配置决定，两者相乘影响资源使用。
+
+结果保存到 `OUT/results.json`；每项原生状态和任务位于 `OUT/items/<request_id>/jobs/generation/`，单项结果为 `OUT/items/<request_id>/result.json`；Data Designer 数据集位于 `OUT/designer/`。结果中的 `task_paths` 只包含预审接受的候选。所有候选接受才记为 `completed`，部分接受记为 `partial`；单项异常会记为 `failed`，不阻止其他输入执行。存在未完成项时命令返回非零退出码。
+
+输出目录必须是新目录，不自动重跑或覆盖旧批次。已有 job 的恢复沿用原生命令，配置中的 `storage_root` 需指向 `OUT/items/<request_id>`；批量调度入口不自动恢复。它不会自动提交 DataAgent 归档或启动 Harbor rollout。
