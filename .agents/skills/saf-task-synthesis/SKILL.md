@@ -11,7 +11,7 @@ Choose SAF when the new task should inherit a concrete scientific method and ref
 
 ## Prepare inputs
 
-Create a seed directory with `task_card.json` describing the original objective, public inputs/outputs and environment, plus `seed_bundle.json`:
+In TTF hosted mode, prepare the bundle under `seed/saf/` and the config at `seed/saf-config.yaml`. Existing authorized external bundles can still be referenced. Create a seed directory with `task_card.json` describing the original objective, public inputs/outputs and environment, plus `seed_bundle.json`:
 
 ```json
 {"schema_version":"saf.seed.v2","seed_id":"scientific-seed","task_card":"task_card.json","solution_path":"solution","successful_trajectory":null,"environment_dir":null,"input_dir":null,"software_dir":null}
@@ -25,22 +25,14 @@ Create YAML configuration using `pipeline.workflow_mode: audited`, a bounded `pi
 
 In TTF hosted mode, prepare files under the assigned run and submit `saf.run` with `seed` and `config` paths, followed by `tasks.collect` with `pipeline: saf`. The host owns execution; do not run commands or substitute full `saf run`/Solver workflows in the planner.
 
-The host calls the native API in the SAF interpreter:
+The host prepares a JSONL request with `request_id`, `seed` and `config`, then invokes the existing native Data Designer entrypoint in the SAF interpreter:
 
-```python
-import asyncio
-from pathlib import Path
-from science_agent_factory.contracts.settings import FactorySettings
-from science_agent_factory.workflow.factory import ScienceAgentFactory
-
-settings = FactorySettings.load(Path(config))
-settings.storage_root = Path(output_root)
-factory = ScienceAgentFactory(settings)
-state = asyncio.run(factory.generate_tasks(Path(seed), job_id="generation"))
+```bash
+python -m science_agent_factory.designer --requests "$REQUESTS" --out "$OUT" --concurrency 1 --env-file /dev/null
 ```
 
-A Harbor JobConfig must be available; the TTF adapter supplies a default when absent. `generate_tasks` runs Builder, preflight Auditor and native feedback revisions; it skips Distiller and independent Solver. This entrypoint creates no solver training trajectory.
+The native entrypoint calls `generate_tasks`: Builder, preflight Auditor and native feedback revisions run; Distiller and independent Solver are skipped. The adapter supplies a Harbor JobConfig when absent and injects model configuration through the host environment. This entrypoint creates no solver training trajectory.
 
 ## Results
 
-Read the job's `state.json`, candidate `task_dir` paths and corresponding preflight audit reports. Only `preflight_accepted` with actual accepted audit evidence is eligible. Preserve rejection reports and failures; exit success alone is insufficient. Solver `attempts` must remain empty. Preflight acceptance is not an independent Oracle proof. In TTF, native evidence stays under `native/saf/`; the host collects eligible tasks into `tasks/` and writes `task_manifest.json`.
+Read `items/<request_id>/result.json` and the job's `items/<request_id>/jobs/generation/state.json`, candidate `task_dir` paths and corresponding preflight audit reports. Only `preflight_accepted` with actual accepted audit evidence is eligible. Preserve rejection reports and failures; exit success alone is insufficient. Solver `attempts` must remain empty. Preflight acceptance is not an independent Oracle proof. In TTF, native evidence stays under `saf/`; the host collects eligible tasks into `tasks/` and writes `task_manifest.json`.
